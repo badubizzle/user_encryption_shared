@@ -22,6 +22,9 @@ defmodule UserEncryption.Database do
   end
 
   @spec get_user(Database.t(), username :: binary) :: User.t() | nil
+  @doc """
+  Returns a user with the given username if found or nil
+  """
   def get_user(%__MODULE__{} = db, username) do
     case Map.get(db.users, username, nil) do
       %User{} = u -> u
@@ -31,6 +34,9 @@ defmodule UserEncryption.Database do
 
   @spec login_user(Database.t(), %{password: binary, username: any}) ::
           :error | :ok
+  @doc """
+  Verifies a user's username and password
+  """
   def login_user(%__MODULE__{} = db, %{username: username, password: password}) do
     with user <- Map.get(db.users, username),
          {:ok, _key} <- Utils.decrypt_key_hash(password, user.key_hash) do
@@ -42,6 +48,10 @@ defmodule UserEncryption.Database do
 
   @spec add_user(Database.t(), %{password: binary, username: binary}) ::
           {:error, binary} | {:ok, Database.t()}
+  @doc """
+  Add a new user to the database with username and password.
+  Returns {ok, db} or {:error, message}
+  """
   def add_user(
         %__MODULE__{} = db,
         %{username: username, password: password}
@@ -64,6 +74,9 @@ defmodule UserEncryption.Database do
           EncryptedDocument.t(),
           binary
         ) :: {:ok, binary} | {:error, any}
+  @doc """
+  Decrypt an encrypted document and return the decrypted content
+  """
   def decrypt_document(
         %__MODULE__{} = db,
         %User{key_pair: %KeyPair{private_hash: private_key_hash}} = user,
@@ -105,6 +118,10 @@ defmodule UserEncryption.Database do
         ) ::
           {:error, :failed_verification | binary}
           | {:ok, EncryptedDocument.t(), Database.t()}
+  @doc """
+  Update an encrypted document with new content.
+  First decrypts the document before updating the content
+  """
   def update_document(
         db,
         document,
@@ -145,16 +162,25 @@ defmodule UserEncryption.Database do
     end
   end
 
-  @spec add_document(Databae.t(), User.t(), content :: binary) ::
+  @spec add_document(Databae.t(), User.t(), password :: binary, content :: binary) ::
           {:ok, EncryptedDocument.t(), Database.t()}
-  def add_document(%__MODULE__{} = db, %User{} = user, content) do
-    document_key = Utils.generate_key()
-    doc = EncryptedDocument.new(content, document_key)
-    user_document = UserDocument.new(user, doc, document_key)
-    documents = Map.put(db.documents, doc.id, doc)
-    user_documents = Map.put(db.user_documents, user_document.id, user_document)
-    updated_db = %__MODULE__{db | documents: documents, user_documents: user_documents}
-    {:ok, doc, updated_db}
+  @doc """
+  Create a new encrypted document with the given content for a user
+  """
+  def add_document(%__MODULE__{} = db, %User{} = user, password, content) do
+    case login_user(db, %{username: user.username, password: password}) do
+      :ok ->
+        document_key = Utils.generate_key()
+        doc = EncryptedDocument.new(content, document_key)
+        user_document = UserDocument.new(user, doc, document_key)
+        documents = Map.put(db.documents, doc.id, doc)
+        user_documents = Map.put(db.user_documents, user_document.id, user_document)
+        updated_db = %__MODULE__{db | documents: documents, user_documents: user_documents}
+        {:ok, doc, updated_db}
+
+      error ->
+        error
+    end
   end
 
   @spec share_user_document(
@@ -166,6 +192,10 @@ defmodule UserEncryption.Database do
         ) ::
           {:error, binary | :failed_verification}
           | {:ok, Database.t()}
+  @doc """
+  Allows a user to share encrypted document with another user.
+  The from-user must have access to the document in order to be able to share
+  """
   def share_user_document(
         %__MODULE__{} = db,
         %User{} = from_user,

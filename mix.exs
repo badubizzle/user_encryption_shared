@@ -21,8 +21,7 @@ defmodule UserEncryption.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:comeonin, "~> 3.0"},
-      {:enacl, git: "https://github.com/jlouis/enacl", override: true}
+      {:enacl, git: "https://github.com/jlouis/enacl"}
     ]
   end
 end
