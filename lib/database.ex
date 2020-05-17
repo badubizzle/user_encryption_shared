@@ -70,8 +70,8 @@ defmodule UserEncryption.Database do
 
   @spec decrypt_document(
           Database.t(),
-          User.t(),
           EncryptedDocument.t(),
+          User.t(),
           binary
         ) :: {:ok, binary} | {:error, any}
   @doc """
@@ -79,8 +79,8 @@ defmodule UserEncryption.Database do
   """
   def decrypt_document(
         %__MODULE__{} = db,
-        %User{key_pair: %KeyPair{private_hash: private_key_hash}} = user,
         %EncryptedDocument{} = document,
+        %User{key_pair: %KeyPair{private_hash: private_key_hash}} = user,
         password
       ) do
     user_doc_id = "#{user.username}-#{document.id}"
