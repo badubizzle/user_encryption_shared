@@ -1,10 +1,11 @@
-# UserEncryption with shared documents using public private keys
+# UserEncryption with shared documents using asymmetric encryption (public-private key pair)
 
 ## Cloning and Running tests
 
 1. Clone repo
 2. Install dependencies `mix deps.get`
 3. Run test `mix test`
+4. Run `iex -S mix`
 
 ## Examples
 
